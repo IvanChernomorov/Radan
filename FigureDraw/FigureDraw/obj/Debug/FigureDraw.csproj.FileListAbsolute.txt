@@ -1,0 +1,11 @@
+C:\Users\super\source\repos\FigureDraw\FigureDraw\bin\Debug\FigureDraw.exe.config
+C:\Users\super\source\repos\FigureDraw\FigureDraw\bin\Debug\FigureDraw.exe
+C:\Users\super\source\repos\FigureDraw\FigureDraw\bin\Debug\FigureDraw.pdb
+C:\Users\super\source\repos\FigureDraw\FigureDraw\obj\Debug\FigureDraw.csproj.AssemblyReference.cache
+C:\Users\super\source\repos\FigureDraw\FigureDraw\obj\Debug\FigureDraw.csproj.SuggestedBindingRedirects.cache
+C:\Users\super\source\repos\FigureDraw\FigureDraw\obj\Debug\FigureDraw.Properties.Resources.resources
+C:\Users\super\source\repos\FigureDraw\FigureDraw\obj\Debug\FigureDraw.csproj.GenerateResource.cache
+C:\Users\super\source\repos\FigureDraw\FigureDraw\obj\Debug\FigureDraw.csproj.CoreCompileInputs.cache
+C:\Users\super\source\repos\FigureDraw\FigureDraw\obj\Debug\FigureDraw.exe
+C:\Users\super\source\repos\FigureDraw\FigureDraw\obj\Debug\FigureDraw.pdb
+C:\Users\super\source\repos\FigureDraw\FigureDraw\obj\Debug\FigureDraw.FigureForm.resources
