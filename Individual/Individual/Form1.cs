@@ -206,7 +206,7 @@ namespace Individual
                 {
                     if (payouts[payIndex].EmpID != emp.ID)
                         break;
-                    if (payouts[payIndex].IssueDate >= startMounthDate)
+                    if (payouts[payIndex].IssueDate >= startMounthDate && payouts[payIndex].IssueDate <= endDate)
                         deposits += payouts[payIndex].Total;
                 }
                 for (; repIndex < reports.Count; repIndex++)
