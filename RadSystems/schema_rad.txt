@@ -1,0 +1,122 @@
+DROP TABLE IF EXISTS payment;
+DROP TABLE IF EXISTS putevki;
+DROP TABLE IF EXISTS tourist_info;
+DROP TABLE IF EXISTS tourist;
+DROP TABLE IF EXISTS seasons;
+DROP TABLE IF EXISTS tours;
+
+CREATE TABLE tourist
+(
+    tourist_id SERIAL PRIMARY KEY,
+    FirstName CHARACTER VARYING(30),
+    LastName CHARACTER VARYING(30),
+	Patronymic CHARACTER VARYING(30)
+);
+INSERT INTO tourist (FirstName, LastName, Patronymic) VALUES ('Sergei', 'Zubenko', 'Mikhailovich'),
+('Ivan', 'Ivanov', 'Ivanovich'),
+('Ivan', 'Abb', 'Abbch'),
+('Dmitr', 'Ditr', 'Dmitrovich'),
+('Victor', 'Ivanov', 'Vovich'),
+('Fhj', 'Gag', 'hsch');
+
+CREATE TABLE tourist_info(
+	tourist_id SERIAL REFERENCES tourist(tourist_id) PRIMARY KEY,
+	email CHARACTER VARYING(50),
+	passport_series CHARACTER VARYING(4),
+	city CHARACTER VARYING(30),
+	country CHARACTER VARYING(30),
+	num CHARACTER VARYING(8),
+	post CHARACTER VARYING(6)
+);
+
+INSERT INTO tourist_info (passport_series, city, country, num, post)
+VALUES
+('1111', 'Asd', 'Rus', '12345678', '567308'),
+('1231', 'Asd', 'Rus', '09875678', '540967'),
+('1891', 'Kras', 'Rus', '12565778', '784719'),
+('4871', 'Kras', 'Rus', '14745678', '719489'),
+('9751', 'NY', 'usa', '12345308', '246434'),
+('9356', 'NY', 'usa', '12341868', '357924');
+
+CREATE TABLE tours(
+tour_id SERIAL PRIMARY KEY,
+tour_name CHARACTER VARYING(30),
+price INTEGER,
+tour_info CHARACTER VARYING(255)
+);
+
+INSERT INTO tours (tour_name, price, tour_info)
+VALUES
+('Norm', 25000.00, 'wegwthry'),
+('Ok', 30000.00, 'bwbw'),
+('Nice', 40000.00, 'brg'),
+('Bum', 10000.00, 'gadfaf'),
+('Rich', 115000.00, 'nyhet');
+
+CREATE TABLE seasons(
+	season_id SERIAL PRIMARY KEY,
+	tour_id INTEGER REFERENCES tours(tour_id),
+	start_date1 date,
+	end_date date,
+	is_closed boolean,
+	seats_amount INT
+);
+
+INSERT INTO seasons(tour_id, start_date1, end_date, is_closed, seats_amount)
+VALUES
+(1, '2020-07-02', '2020-09-01', true, 200),
+(2, '2020-08-02', '2020-10-01', false, 300),
+(3, '2020-09-02', '2020-11-01', true, 400),
+(4, '2020-10-02', '2020-12-01', false, 500);
+
+CREATE TABLE putevki(
+	putevki_id SERIAL PRIMARY KEY,
+	tourist_id INT REFERENCES tourist(tourist_id),
+	season_id INT REFERENCES seasons(season_id)
+);
+
+INSERT INTO putevki (tourist_id, season_id) VALUES (1, 1);
+CREATE TABLE payment(
+	payment_id SERIAL PRIMARY KEY,
+	putevki_id INT REFERENCES putevki(putevki_id),
+	payment_date DATE,
+	amount int
+);
+
+
+----------------------------------------------------------------------
+
+DROP TRIGGER add_ticket_trigger on tourist;
+
+CREATE OR REPLACE FUNCTION ticket_trigger_func()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    VOLATILE NOT LEAKPROOF
+AS $BODY$
+-- in pgadmin at tabpage CODE
+    DECLARE 
+        sid INT;
+        tid INT;
+    BEGIN
+        sid:=(select season_id
+            from seasons s
+            where s.tour_id=
+                    (select tour_id
+                    from tours
+                    where price=(select min(price) from tours)));
+        tid:=(select tourist_id from tourist order by tourist_id desc limit 1);
+        insert into putevki(season_id, tourist_id) values(sid,tid);
+        RETURN NEW;
+    END;
+-- CODE ends
+$BODY$;
+
+ALTER FUNCTION ticket_trigger_func()
+    OWNER TO postgres;
+	
+CREATE TRIGGER add_ticket_trigger
+    AFTER INSERT
+    ON tourist
+    FOR EACH ROW
+    EXECUTE FUNCTION ticket_trigger_func();
+
