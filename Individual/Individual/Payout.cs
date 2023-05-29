@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Individual
 {
-    internal class Payout
+    public class Payout
     {
         public int EmpID { get; set; }
         public DateTime IssueDate { get; set; }

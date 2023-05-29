@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 
@@ -13,16 +11,16 @@ namespace Individual
     {
         private NpgsqlConnection con;
         private string connString = "Host=127.0.0.1;Username=postgres;Password=123;Database=Reports";
-        private List<Employee> employees;
+        private Store store;
         private List<string> empIds;
-        private List<Report> reports;
-        private List<Payout> payouts;
+
 
         public Form1()
         {
             InitializeComponent();
             con = new NpgsqlConnection(connString);
             con.Open();
+            store = new Store();
             empIds = new List<string>();
             LoadEmployees();
             LoadReports();
@@ -54,7 +52,7 @@ namespace Individual
             int cellIndex = 1;
             int repIndex = 0;
             int payIndex = 0;
-            foreach (var emp in employees)
+            foreach (var emp in store.Employees)
             {
                 double total = 0;
                 wsh.Cells[cellIndex, 1] = emp.FullName;
@@ -62,26 +60,26 @@ namespace Individual
                 wsh.Cells[cellIndex + 1, 2] = "Статья расхода";
                 wsh.Cells[cellIndex + 1, 3] = "Сумма";
                 cellIndex+=2;
-                for(; repIndex < reports.Count; repIndex++ )
+                for(; repIndex < store.Reports.Count; repIndex++ )
                 {
-                    if (reports[repIndex].EmpID != emp.ID)
+                    if (store.Reports[repIndex].EmpID != emp.ID)
                         break;
-                    if (reports[repIndex].ExpenceDate <= endDate && reports[repIndex].ExpenceDate >= startDate)
+                    if (store.Reports[repIndex].ExpenceDate <= endDate && store.Reports[repIndex].ExpenceDate >= startDate)
                     {
-                        wsh.Cells[cellIndex, 1] = reports[repIndex].ExpenceDate.ToShortDateString();
-                        wsh.Cells[cellIndex, 2] = reports[repIndex].ExpenceItem;
-                        wsh.Cells[cellIndex, 3] = reports[repIndex].Total;
-                        total += reports[repIndex].Total;
+                        wsh.Cells[cellIndex, 1] = store.Reports[repIndex].ExpenceDate.ToShortDateString();
+                        wsh.Cells[cellIndex, 2] = store.Reports[repIndex].ExpenceItem;
+                        wsh.Cells[cellIndex, 3] = store.Reports[repIndex].Total;
+                        total += store.Reports[repIndex].Total;
                         cellIndex++;
                     }
                 }
                 double deposits = 0;
-                for (; payIndex < payouts.Count; payIndex++)
+                for (; payIndex < store.Payouts.Count; payIndex++)
                 {
-                    if (payouts[payIndex].EmpID != emp.ID)
+                    if (store.Payouts[payIndex].EmpID != emp.ID)
                         break;
-                    if (payouts[payIndex].IssueDate <= endDate && payouts[payIndex].IssueDate >= startDate)
-                        deposits += payouts[payIndex].Total;
+                    if (store.Payouts[payIndex].IssueDate <= endDate && store.Payouts[payIndex].IssueDate >= startDate)
+                        deposits += store.Payouts[payIndex].Total;
                 }
                 wsh.Cells[cellIndex, 1] = $"Остаток по счёту = {deposits - total}";
                 cellIndex+=2;
@@ -98,47 +96,47 @@ namespace Individual
 
         private void LoadEmployees()
         {
-            employees = new List<Employee>();
             string sql = "SELECT * FROM employee ORDER BY emp_id";
             DataTable dt = new DataTable();
             NpgsqlDataAdapter adap = new NpgsqlDataAdapter(sql, con);
             adap.Fill(dt);
-            foreach(DataRow row in dt.Rows)
+            dataGridView1.DataSource = dt;
+            foreach (DataRow row in dt.Rows)
             {
                 string fullName = row[2].ToString() + " " + row[1].ToString() + " " + row[3].ToString();
                 comboBox1.Items.Add(row[0] + " " + fullName);
                 Employee emp = new Employee((int)row[0], fullName, row[4].ToString());
-                employees.Add(emp);
+                store.Employees.Add(emp);
             }
             adap.Dispose();
         }
 
         private void LoadReports()
         {
-            reports = new List<Report>();
             string sql = "SELECT * FROM advance_reports ORDER BY emp_id, expence_date";
             DataTable dt = new DataTable();
             NpgsqlDataAdapter adap = new NpgsqlDataAdapter(sql, con);
             adap.Fill(dt);
+            dataGridView3.DataSource = dt;
             foreach (DataRow row in dt.Rows)
             {
                 Report rep = new Report((int)row[0], (int)row[1], (DateTime)row[2], row[3].ToString(), double.Parse(row[4].ToString()));
-                reports.Add(rep);
+                store.Reports.Add(rep);
             }
             adap.Dispose();
         }
 
         private void LoadPayouts()
         {
-            payouts = new List<Payout>();
             string sql = "SELECT * FROM advance_ammounts ORDER BY emp_id, issue_date";
             DataTable dt = new DataTable();
             NpgsqlDataAdapter adap = new NpgsqlDataAdapter(sql, con);
             adap.Fill(dt);
+            dataGridView2.DataSource = dt;
             foreach (DataRow row in dt.Rows)
             {
                 Payout payout = new Payout((int)row[0], (DateTime)row[1], double.Parse(row[2].ToString()));
-                payouts.Add(payout);
+                store.Payouts.Add(payout);
             }
             adap.Dispose();
         }
@@ -171,8 +169,6 @@ namespace Individual
             var endDate = dateTimePicker4.Value;
             var startMounthDate = startDate.AddDays(-startDate.Day + 1);
 
-            label3.Text = startMounthDate.ToString();
-
             if (startDate.ToShortDateString().CompareTo(endDate.ToShortDateString()) >= 0)
             {
                 label5.Text = "Неверная дата";
@@ -196,26 +192,26 @@ namespace Individual
             int payIndex = 0;
             double total = 0;
             double deposits = 0;
-            foreach (var emp in employees)
+            foreach (var emp in store.Employees)
             {
                 if (!empIds.Contains(emp.ID.ToString()))
                 {
                     continue;
                 }
-                for (; payIndex < payouts.Count; payIndex++)
+                for (; payIndex < store.Payouts.Count; payIndex++)
                 {
-                    if (payouts[payIndex].EmpID != emp.ID)
+                    if (store.Payouts[payIndex].EmpID != emp.ID)
                         break;
-                    if (payouts[payIndex].IssueDate >= startMounthDate && payouts[payIndex].IssueDate <= endDate)
-                        deposits += payouts[payIndex].Total;
+                    if (store.Payouts[payIndex].IssueDate >= startMounthDate && store.Payouts[payIndex].IssueDate <= endDate)
+                        deposits += store.Payouts[payIndex].Total;
                 }
-                for (; repIndex < reports.Count; repIndex++)
+                for (; repIndex < store.Reports.Count; repIndex++)
                 {
-                    if (reports[repIndex].EmpID != emp.ID)
+                    if (store.Reports[repIndex].EmpID != emp.ID)
                         break;
-                    if (reports[repIndex].ExpenceDate <= endDate && reports[repIndex].ExpenceDate >= startDate)
+                    if (store.Reports[repIndex].ExpenceDate <= endDate && store.Reports[repIndex].ExpenceDate >= startDate)
                     {
-                        total += reports[repIndex].Total;
+                        total += store.Reports[repIndex].Total;
                     }
                 }
             }
@@ -230,6 +226,23 @@ namespace Individual
             }
             workbook.Close();
             exApp.Quit();
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            con?.Close();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            DeleteForm delete = new DeleteForm(tabControl1.SelectedTab.Text, (DataGridView)tabControl1.SelectedTab.Controls[0], store);
+            delete.ShowDialog();
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            UpdateForm update = new UpdateForm(tabControl1.SelectedTab.Text, (DataGridView)tabControl1.SelectedTab.Controls[0], store);
+            update.ShowDialog();
         }
     }
 }

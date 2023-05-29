@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Individual
 {
-    internal class Report
+    public class Report
     {
         public int ID { get; set; }
         public int EmpID { get; set; }
